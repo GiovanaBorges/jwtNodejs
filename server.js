@@ -18,6 +18,8 @@ app.get('/user/:id',checkToken,async(req,res)=>{
     if(!user){
         return res.status(404).json({msg:"User not found"})
     }
+
+    res.status(200).json({ user });
 })
 
 function checkToken(req,res,next){
@@ -25,7 +27,7 @@ function checkToken(req,res,next){
     const token = authHeader && authHeader.split(" ")[1]
 
     if(!token){
-        req.status(401).json({msg:"Not authorized"})
+        res.status(401).json({msg:"Not authorized"})
     }
 
     try{
@@ -33,7 +35,8 @@ function checkToken(req,res,next){
         jwt.verify(token,secret)
         next()
     }catch(err){
-
+        console.log(err)
+        res.status(401).json({msg:"server errror"})
     }
 }
 
@@ -53,15 +56,15 @@ app.post('/auth/login', async(req,res)=>{
         return res.status(404).json({msg:"User not found"})
     }
 
-    const checkPassword = await bcrypt.compare(password, user.password)
+    const checkPassword = await bcrypt.compare(password, userExists.password)
     if(!checkPassword){
         return res.status(422).json({msg:"Password Invalid"})
     }
 
     try{
         const secret = process.env.SECRET
-        const token = jwt.sign({id:user._id},secret)
-        res.status(200).json({msg:"Autenticao realizada com sucesso"},token)
+        const token = jwt.sign({id:userExists._id},secret)
+        res.status(200).json({msg:`Autenticao realizada com sucesso ,Token : ${token} - user: ${userExists._id}`})
     }catch(err){
         console.log(err)
         res.status(422).json({msg:"Server error"})
@@ -102,7 +105,7 @@ app.post('/auth/register', async (req,res)=>{
     const user = new User({
         name
         ,email
-        ,password:passwordHash
+        ,passwordHash
     })
 
     try{
@@ -128,6 +131,3 @@ mongoose
     })
     .catch((error) =>{console.log(error)})
 
-//app.listen(3000,(req,res) => {
-//    console.log("listening")
-//})
